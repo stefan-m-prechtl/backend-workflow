@@ -20,6 +20,9 @@ ext {
 }
 
 dependencies {
+
+	// CDI standalone
+	implementation group: 'org.jboss.weld.se', name: 'weld-se-shaded', version: '5.1.0.Final'
     // Google Guava
 	implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
 	

@@ -1,5 +1,7 @@
 package de.esempe.workflow;
 
+import java.util.List;
+
 import jakarta.json.JsonObject;
 
 public class Workflowinstance
@@ -17,4 +19,22 @@ public class Workflowinstance
 		start.setData(data);
 		this.workflow.setCurrentState(start);
 	}
+
+	public State getCurrentState()
+	{
+		final State result = this.workflow.getCurrentState();
+		return result;
+	}
+
+	public List<Transition> getCurrentTransistions()
+	{
+		final List<Transition> result = this.workflow.getCurrentTransistions();
+		return result;
+	}
+
+	public void fireTransition(final Transition t)
+	{
+		this.workflow.fireTransition(t);
+	}
+
 }

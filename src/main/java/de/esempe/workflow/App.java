@@ -3,6 +3,8 @@
  */
 package de.esempe.workflow;
 
+import java.util.List;
+
 import org.tinylog.Logger;
 
 import de.esempe.workflow.Transition.TransistionType;
@@ -12,8 +14,10 @@ import jakarta.json.JsonObject;
 public class App
 {
 
-	public static void main(final String[] args)
+	public static void main(final String[] args) throws InterruptedException
 	{
+		CDI.CONTAINER.isRunning();
+
 		final App app = new App();
 		final Workflow wf = app.defineWorkflow();
 		final Workflowinstance instance = new Workflowinstance(wf);
@@ -24,13 +28,17 @@ public class App
 				.add("begründung", "SW-Installation").build();
 
 		instance.start(data);
+		Thread.sleep(5000);
+
+		final List<Transition> currentTransistions = instance.getCurrentTransistions();
+		instance.fireTransition(currentTransistions.get(0));
 
 		Logger.info("done");
 	}
 
 	private Workflow defineWorkflow()
 	{
-		final Workflow result = new Workflow("Adminbberechtigung");
+		final Workflow result = CDI.CONTAINER.getType(Workflow.class);
 
 		final State start = new State("Start");
 		final State genehmigt = new State("Genehmigt");
@@ -47,7 +55,7 @@ public class App
 				map.dauer == 4;
 				""";
 
-		final Rule ruleMinDauer = RuleCreator.build("Dauer <= 4", script);
+		final Rule ruleMinDauer = RuleCreator.build("Minimale Dauer", script);
 		automatischeGenehmigung.setRule(ruleMinDauer);
 
 		final Transition manuellePruefung = new Transition("Manuelle Prüfung", start, pruefen);
@@ -59,7 +67,7 @@ public class App
 				map.dauer == 60;
 				""";
 
-		final Rule ruleMaxDauer = RuleCreator.build("Dauer == 60", script);
+		final Rule ruleMaxDauer = RuleCreator.build("Maximale Dauer", script);
 		manuellePruefung.setRule(ruleMaxDauer);
 
 		final Transition manuelleGenehmigung = new Transition("Manuelle Prüfung", pruefen, genehmigt);
