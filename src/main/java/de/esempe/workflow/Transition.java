@@ -1,17 +1,36 @@
 package de.esempe.workflow;
 
+import java.util.Optional;
+
 import com.google.common.base.MoreObjects;
+
+import jakarta.json.JsonObject;
 
 public class Transition
 {
-	private State fromState;
-	private State toState;
+	enum TransistionType
+	{
+		USER, SYSTEM;
+	}
 
-	public Transition(final State fromState, final State toState)
+	private final String name;
+	private final State fromState;
+	private final State toState;
+
+	private TransistionType type;
+	private Optional<JsonObject> data;
+	private Rule rule;
+
+	public Transition(final String name, final State fromState, final State toState)
 	{
 		super();
+		this.name = name;
 		this.fromState = fromState;
 		this.toState = toState;
+
+		this.type = TransistionType.USER;
+		this.data = Optional.empty();
+
 	}
 
 	public State getFromState()
@@ -22,6 +41,41 @@ public class Transition
 	public State getToState()
 	{
 		return this.toState;
+	}
+
+	public TransistionType getType()
+	{
+		return this.type;
+	}
+
+	public void setType(final TransistionType type)
+	{
+		this.type = type;
+	}
+
+	public Optional<JsonObject> getData()
+	{
+		return this.data;
+	}
+
+	public void setData(final JsonObject data)
+	{
+		this.data = Optional.ofNullable(data);
+	}
+
+	public Rule getRule()
+	{
+		return this.rule;
+	}
+
+	public void setRule(final Rule rule)
+	{
+		this.rule = rule;
+	}
+
+	public String getName()
+	{
+		return this.name;
 	}
 
 	@Override

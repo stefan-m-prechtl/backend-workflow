@@ -1,19 +1,21 @@
 package de.esempe.workflow;
 
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
 
 import com.google.common.base.MoreObjects;
 
+import jakarta.json.JsonObject;
+
 public class State
 {
-	private UUID objId;
-	private String name;
+	private final String name;
+	private Optional<JsonObject> data;
 
 	public State(final String name)
 	{
-		this.objId = UUID.fromString("objID" + name);
 		this.name = name;
+		this.data = Optional.empty();
 	}
 
 	public String getName()
@@ -21,10 +23,20 @@ public class State
 		return this.name;
 	}
 
+	public Optional<JsonObject> getData()
+	{
+		return this.data;
+	}
+
+	public void setData(final JsonObject data)
+	{
+		this.data = Optional.ofNullable(data);
+	}
+
 	@Override
 	public int hashCode()
 	{
-		final var result = Objects.hash(this.objId);
+		final var result = Objects.hash(this.name);
 		return result;
 	}
 
@@ -34,7 +46,7 @@ public class State
 		if (obj instanceof State)
 		{
 			final var other = (State) obj;
-			return Objects.equals(this.objId, other.objId);
+			return Objects.equals(this.name, other.name);
 		}
 		return false;
 	}
@@ -43,7 +55,6 @@ public class State
 	public String toString()
 	{
 		final var result = MoreObjects.toStringHelper(this) //
-				.add("objid", this.objId) //
 				.add("name", this.name) //
 				.toString();
 		return result;

@@ -3,15 +3,74 @@
  */
 package de.esempe.workflow;
 
+import org.tinylog.Logger;
+
+import de.esempe.workflow.Transition.TransistionType;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+
 public class App
 {
-	public String getGreeting()
-	{
-		return "Hello World!";
-	}
 
 	public static void main(final String[] args)
 	{
-		System.out.println(new App().getGreeting());
+		final App app = new App();
+		final Workflow wf = app.defineWorkflow();
+		final Workflowinstance instance = new Workflowinstance(wf);
+
+		final JsonObject data = Json.createObjectBuilder() //
+				.add("pc", "R9575") //
+				.add("dauer", 60) //
+				.add("begründung", "SW-Installation").build();
+
+		instance.start(data);
+
+		Logger.info("done");
 	}
+
+	private Workflow defineWorkflow()
+	{
+		final Workflow result = new Workflow("Adminbberechtigung");
+
+		final State start = new State("Start");
+		final State genehmigt = new State("Genehmigt");
+		final State abgelehnt = new State("Abgelehnt");
+		final State pruefen = new State("prüfen");
+
+		final Transition automatischeGenehmigung = new Transition("Automatische Genehmigung", start, genehmigt);
+		automatischeGenehmigung.setType(TransistionType.SYSTEM);
+
+		var script = """
+				import groovy.json.JsonSlurper
+				def jsonSlurper = new JsonSlurper()
+				def map = jsonSlurper.parseText(data)
+				map.dauer == 4;
+				""";
+
+		final Rule ruleMinDauer = RuleCreator.build("Dauer <= 4", script);
+		automatischeGenehmigung.setRule(ruleMinDauer);
+
+		final Transition manuellePruefung = new Transition("Manuelle Prüfung", start, pruefen);
+		manuellePruefung.setType(TransistionType.SYSTEM);
+		script = """
+				import groovy.json.JsonSlurper
+				def jsonSlurper = new JsonSlurper()
+				def map = jsonSlurper.parseText(data)
+				map.dauer == 60;
+				""";
+
+		final Rule ruleMaxDauer = RuleCreator.build("Dauer == 60", script);
+		manuellePruefung.setRule(ruleMaxDauer);
+
+		final Transition manuelleGenehmigung = new Transition("Manuelle Prüfung", pruefen, genehmigt);
+		final Transition manuelleAblehnung = new Transition("Manuelle Prüfung", pruefen, abgelehnt);
+
+		result.addTransition(automatischeGenehmigung);
+		result.addTransition(manuellePruefung);
+		result.addTransition(manuelleGenehmigung);
+		result.addTransition(manuelleAblehnung);
+
+		return result;
+	}
+
 }
