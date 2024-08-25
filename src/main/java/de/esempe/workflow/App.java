@@ -5,9 +5,19 @@ package de.esempe.workflow;
 
 import java.util.List;
 
+import org.bson.Document;
 import org.tinylog.Logger;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
 import de.esempe.workflow.Transition.TransistionType;
+import dev.morphia.Datastore;
+import dev.morphia.Morphia;
+import dev.morphia.config.MorphiaConfig;
+import dev.morphia.query.Query;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
@@ -19,7 +29,51 @@ public class App
 		CDI.CONTAINER.isRunning();
 
 		final App app = new App();
-		final Workflow wf = app.defineWorkflow();
+		// app.runDemoWorkflow();
+		// app.runDemoMongoDB();
+		app.runDemoMorphia();
+
+	}
+
+	private void runDemoMorphia()
+	{
+		final String uri = "mongodb://127.0.0.1:27017";
+		final MongoClient mongoClient = MongoClients.create(uri);
+		final MorphiaConfig config = MorphiaConfig.load();
+		final Datastore datastore = Morphia.createDatastore(mongoClient, config);
+
+		// final User user1 = new User("etienne");
+		// final User save = datastore.save(user1);
+
+		final Query<User> query = datastore.find(User.class);
+		final List<User> users = query.iterator().toList();
+
+		Logger.info("done");
+	}
+
+	private void runDemoMongoDB()
+	{
+		final String uri = "mongodb://127.0.0.1:27017";
+		final MongoClient mongoClient = MongoClients.create(uri);
+		final MongoDatabase database = mongoClient.getDatabase("testdb");
+
+		database.createCollection("workflows");
+		final MongoCollection<Document> collection = database.getCollection("workflows");
+
+		// collection.insertOne(new Document().append("_id", new ObjectId()).append("title", "Workflow Admin-Rechte"));
+		// collection.insertOne(new Document().append("_id", new ObjectId()).append("title", "Workflow WWS-Rechte"));
+
+		final long countDocuments = collection.countDocuments();
+		System.out.println("Anzahl: " + countDocuments);
+
+		final Document firstDoc = collection.find().first();
+
+		Logger.info("done");
+	}
+
+	private void runDemoWorkflow() throws InterruptedException
+	{
+		final Workflow wf = this.defineWorkflow();
 		final Workflowinstance instance = new Workflowinstance(wf);
 
 		final JsonObject data = Json.createObjectBuilder() //
