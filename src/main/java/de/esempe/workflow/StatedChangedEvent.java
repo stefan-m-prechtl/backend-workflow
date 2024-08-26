@@ -2,14 +2,14 @@ package de.esempe.workflow;
 
 public class StatedChangedEvent
 {
-	private final State state;
+	private final PureState state;
 
-	public StatedChangedEvent(final State state)
+	public StatedChangedEvent(final PureState state)
 	{
 		this.state = state;
 	}
 
-	public State getState()
+	public PureState getState()
 	{
 		return this.state;
 	}

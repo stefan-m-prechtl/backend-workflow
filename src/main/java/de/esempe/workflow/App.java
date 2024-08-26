@@ -13,7 +13,10 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import de.esempe.workflow.Transition.TransistionType;
+import de.esempe.workflow.PureTransition.TransistionType;
+import de.esempe.workflow.domain.Rule;
+import de.esempe.workflow.domain.State;
+import de.esempe.workflow.domain.Transition;
 import dev.morphia.Datastore;
 import dev.morphia.Morphia;
 import dev.morphia.config.MorphiaConfig;
@@ -42,11 +45,42 @@ public class App
 		final MorphiaConfig config = MorphiaConfig.load();
 		final Datastore datastore = Morphia.createDatastore(mongoClient, config);
 
-		// final User user1 = new User("etienne");
+		// final User user1 = new User("rebecca");
 		// final User save = datastore.save(user1);
 
-		final Query<User> query = datastore.find(User.class);
-		final List<User> users = query.iterator().toList();
+		final State stateStart = new State("Start");
+		final State stateEnd = new State("Ende");
+//		final JsonObjectBuilder builder = Json.createObjectBuilder();
+//		builder.add("name", "Eva");
+//		builder.add("age", 30);
+//		builder.add("city", "York");
+//
+//		// Build the JsonObject
+//		final JsonObject jsonObject = builder.build();
+//		state.setData(jsonObject);
+//
+		datastore.save(stateStart);
+		datastore.save(stateEnd);
+
+		final Transition t = new Transition("Bearbeiten", stateStart, stateEnd);
+
+		final var script = """
+				import groovy.json.JsonSlurper
+				def jsonSlurper = new JsonSlurper()
+				def map = jsonSlurper.parseText(data)
+				map.dauer == 4;
+				""";
+
+		final Rule ruleMinDauer = new Rule("Minimale Dauer", script);
+		t.setRule(ruleMinDauer);
+		datastore.save(t);
+
+		final Query<Transition> query = datastore.find(Transition.class);
+		final List<Transition> items = query.iterator().toList();
+		for (final Transition item : items)
+		{
+			System.out.println(item.toString());
+		}
 
 		Logger.info("done");
 	}
@@ -73,7 +107,7 @@ public class App
 
 	private void runDemoWorkflow() throws InterruptedException
 	{
-		final Workflow wf = this.defineWorkflow();
+		final PureWorkflow wf = this.defineWorkflow();
 		final Workflowinstance instance = new Workflowinstance(wf);
 
 		final JsonObject data = Json.createObjectBuilder() //
@@ -84,22 +118,22 @@ public class App
 		instance.start(data);
 		Thread.sleep(5000);
 
-		final List<Transition> currentTransistions = instance.getCurrentTransistions();
+		final List<PureTransition> currentTransistions = instance.getCurrentTransistions();
 		instance.fireTransition(currentTransistions.get(0));
 
 		Logger.info("done");
 	}
 
-	private Workflow defineWorkflow()
+	private PureWorkflow defineWorkflow()
 	{
-		final Workflow result = CDI.CONTAINER.getType(Workflow.class);
+		final PureWorkflow result = CDI.CONTAINER.getType(PureWorkflow.class);
 
-		final State start = new State("Start");
-		final State genehmigt = new State("Genehmigt");
-		final State abgelehnt = new State("Abgelehnt");
-		final State pruefen = new State("prüfen");
+		final PureState start = new PureState("Start");
+		final PureState genehmigt = new PureState("Genehmigt");
+		final PureState abgelehnt = new PureState("Abgelehnt");
+		final PureState pruefen = new PureState("prüfen");
 
-		final Transition automatischeGenehmigung = new Transition("Automatische Genehmigung", start, genehmigt);
+		final PureTransition automatischeGenehmigung = new PureTransition("Automatische Genehmigung", start, genehmigt);
 		automatischeGenehmigung.setType(TransistionType.SYSTEM);
 
 		var script = """
@@ -109,10 +143,10 @@ public class App
 				map.dauer == 4;
 				""";
 
-		final Rule ruleMinDauer = RuleCreator.build("Minimale Dauer", script);
-		automatischeGenehmigung.setRule(ruleMinDauer);
+		// final PureRule ruleMinDauer = RuleCreator.build("Minimale Dauer", script);
+		// automatischeGenehmigung.setRule(ruleMinDauer);
 
-		final Transition manuellePruefung = new Transition("Manuelle Prüfung", start, pruefen);
+		final PureTransition manuellePruefung = new PureTransition("Manuelle Prüfung", start, pruefen);
 		manuellePruefung.setType(TransistionType.SYSTEM);
 		script = """
 				import groovy.json.JsonSlurper
@@ -121,11 +155,11 @@ public class App
 				map.dauer == 60;
 				""";
 
-		final Rule ruleMaxDauer = RuleCreator.build("Maximale Dauer", script);
-		manuellePruefung.setRule(ruleMaxDauer);
+		// final PureRule ruleMaxDauer = RuleCreator.build("Maximale Dauer", script);
+		// manuellePruefung.setRule(ruleMaxDauer);
 
-		final Transition manuelleGenehmigung = new Transition("Manuelle Prüfung", pruefen, genehmigt);
-		final Transition manuelleAblehnung = new Transition("Manuelle Prüfung", pruefen, abgelehnt);
+		final PureTransition manuelleGenehmigung = new PureTransition("Manuelle Prüfung", pruefen, genehmigt);
+		final PureTransition manuelleAblehnung = new PureTransition("Manuelle Prüfung", pruefen, abgelehnt);
 
 		result.addTransition(automatischeGenehmigung);
 		result.addTransition(manuellePruefung);

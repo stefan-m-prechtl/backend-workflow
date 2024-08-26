@@ -6,33 +6,33 @@ import jakarta.json.JsonObject;
 
 public class Workflowinstance
 {
-	private final Workflow workflow;
+	private final PureWorkflow workflow;
 
-	public Workflowinstance(final Workflow workflow)
+	public Workflowinstance(final PureWorkflow workflow)
 	{
 		this.workflow = workflow;
 	}
 
 	public void start(final JsonObject data)
 	{
-		final State start = this.workflow.calculateStartState();
+		final PureState start = this.workflow.calculateStartState();
 		start.setData(data);
 		this.workflow.setCurrentState(start);
 	}
 
-	public State getCurrentState()
+	public PureState getCurrentState()
 	{
-		final State result = this.workflow.getCurrentState();
+		final PureState result = this.workflow.getCurrentState();
 		return result;
 	}
 
-	public List<Transition> getCurrentTransistions()
+	public List<PureTransition> getCurrentTransistions()
 	{
-		final List<Transition> result = this.workflow.getCurrentTransistions();
+		final List<PureTransition> result = this.workflow.getCurrentTransistions();
 		return result;
 	}
 
-	public void fireTransition(final Transition t)
+	public void fireTransition(final PureTransition t)
 	{
 		this.workflow.fireTransition(t);
 	}

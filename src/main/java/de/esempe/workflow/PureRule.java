@@ -9,12 +9,12 @@ import org.tinylog.Logger;
 
 import jakarta.json.JsonObject;
 
-public class Rule
+public class PureRule
 {
 	private final String name;
 	private final CompiledScript script;
 
-	public Rule(final String name, final CompiledScript script)
+	public PureRule(final String name, final CompiledScript script)
 	{
 		this.name = name;
 		this.script = script;

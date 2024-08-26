@@ -6,7 +6,7 @@ import com.google.common.base.MoreObjects;
 
 import jakarta.json.JsonObject;
 
-public class Transition
+public class PureTransition
 {
 	enum TransistionType
 	{
@@ -14,14 +14,14 @@ public class Transition
 	}
 
 	private final String name;
-	private final State fromState;
-	private final State toState;
+	private final PureState fromState;
+	private final PureState toState;
 
 	private TransistionType type;
 	private Optional<JsonObject> data;
-	private Rule rule;
+	private PureRule rule;
 
-	public Transition(final String name, final State fromState, final State toState)
+	public PureTransition(final String name, final PureState fromState, final PureState toState)
 	{
 		super();
 		this.name = name;
@@ -33,12 +33,12 @@ public class Transition
 
 	}
 
-	public State getFromState()
+	public PureState getFromState()
 	{
 		return this.fromState;
 	}
 
-	public State getToState()
+	public PureState getToState()
 	{
 		return this.toState;
 	}
@@ -63,12 +63,12 @@ public class Transition
 		this.data = Optional.ofNullable(data);
 	}
 
-	public Rule getRule()
+	public PureRule getRule()
 	{
 		return this.rule;
 	}
 
-	public void setRule(final Rule rule)
+	public void setRule(final PureRule rule)
 	{
 		this.rule = rule;
 	}

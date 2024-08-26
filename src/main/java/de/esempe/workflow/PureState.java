@@ -7,12 +7,12 @@ import com.google.common.base.MoreObjects;
 
 import jakarta.json.JsonObject;
 
-public class State
+public class PureState
 {
 	private final String name;
 	private Optional<JsonObject> data;
 
-	public State(final String name)
+	public PureState(final String name)
 	{
 		this.name = name;
 		this.data = Optional.empty();
@@ -43,9 +43,9 @@ public class State
 	@Override
 	public boolean equals(final Object obj)
 	{
-		if (obj instanceof State)
+		if (obj instanceof PureState)
 		{
-			final var other = (State) obj;
+			final var other = (PureState) obj;
 			return Objects.equals(this.name, other.name);
 		}
 		return false;

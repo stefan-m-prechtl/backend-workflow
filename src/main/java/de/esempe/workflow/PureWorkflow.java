@@ -12,26 +12,26 @@ import org.tinylog.Logger;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
-import de.esempe.workflow.Transition.TransistionType;
+import de.esempe.workflow.PureTransition.TransistionType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class Workflow
+public class PureWorkflow
 {
 	@Inject
 	Event<StatedChangedEvent> statechangedEvent;
 
 	private final String name;
-	private final Set<Transition> transitions;
-	private final Map<State, List<Transition>> fromStateTransitions;
-	private final Map<State, List<Transition>> toStateTransitions;
+	private final Set<PureTransition> transitions;
+	private final Map<PureState, List<PureTransition>> fromStateTransitions;
+	private final Map<PureState, List<PureTransition>> toStateTransitions;
 
-	private State currentState;
+	private PureState currentState;
 
-	public Workflow()
+	public PureWorkflow()
 	{
 		this.name = "Test";
 		this.transitions = new HashSet<>();
@@ -41,7 +41,7 @@ public class Workflow
 		this.currentState = null;
 	}
 
-	public void addTransition(final Transition transition)
+	public void addTransition(final PureTransition transition)
 	{
 
 		final var fromState = transition.getFromState();
@@ -56,7 +56,7 @@ public class Workflow
 			}
 		}
 
-		List<Transition> fromList = null;
+		List<PureTransition> fromList = null;
 		if (this.fromStateTransitions.containsKey(fromState))
 		{
 			fromList = this.fromStateTransitions.get(fromState);
@@ -68,7 +68,7 @@ public class Workflow
 		}
 		fromList.add(transition);
 
-		List<Transition> toList = null;
+		List<PureTransition> toList = null;
 		if (this.toStateTransitions.containsKey(toState))
 		{
 			toList = this.toStateTransitions.get(toState);
@@ -84,21 +84,21 @@ public class Workflow
 
 	}
 
-	public State calculateStartState()
+	public PureState calculateStartState()
 	{
-		final Set<State> tmp = new HashSet<>(this.fromStateTransitions.keySet());
+		final Set<PureState> tmp = new HashSet<>(this.fromStateTransitions.keySet());
 		tmp.removeAll(this.toStateTransitions.keySet());
 
-		final List<State> all = new ArrayList<>(tmp);
+		final List<PureState> all = new ArrayList<>(tmp);
 		return all.get(0);
 	}
 
-	public boolean isFinalState(final State state)
+	public boolean isFinalState(final PureState state)
 	{
-		final Set<State> tmp = new HashSet<>(this.toStateTransitions.keySet());
+		final Set<PureState> tmp = new HashSet<>(this.toStateTransitions.keySet());
 		tmp.removeAll(this.fromStateTransitions.keySet());
 
-		final List<State> all = new ArrayList<>(tmp);
+		final List<PureState> all = new ArrayList<>(tmp);
 
 		final boolean result = all.contains(state);
 		return result;
@@ -111,7 +111,7 @@ public class Workflow
 		this.setCurrentState(event.getState());
 	}
 
-	public void setCurrentState(final State state)
+	public void setCurrentState(final PureState state)
 	{
 		this.currentState = state;
 
@@ -122,13 +122,13 @@ public class Workflow
 			return;
 		}
 
-		final List<Transition> toTransitions = this.fromStateTransitions.get(this.currentState);
+		final List<PureTransition> toTransitions = this.fromStateTransitions.get(this.currentState);
 
-		for (final Transition t : toTransitions)
+		for (final PureTransition t : toTransitions)
 		{
 			if (t.getType() == TransistionType.SYSTEM)
 			{
-				final Rule r = t.getRule();
+				final PureRule r = t.getRule();
 				if (r.match(this.currentState.getData().get()))
 				{
 					final String msg = "Regel: '" + r.getName() + "' trifft zu";
@@ -145,7 +145,7 @@ public class Workflow
 		}
 	}
 
-	public State getCurrentState()
+	public PureState getCurrentState()
 	{
 		return this.currentState;
 	}
@@ -159,13 +159,13 @@ public class Workflow
 		return result;
 	}
 
-	public List<Transition> getCurrentTransistions()
+	public List<PureTransition> getCurrentTransistions()
 	{
-		final List<Transition> result = this.fromStateTransitions.get(this.currentState);
+		final List<PureTransition> result = this.fromStateTransitions.get(this.currentState);
 		return result;
 	}
 
-	public void fireTransition(final Transition t)
+	public void fireTransition(final PureTransition t)
 	{
 		Preconditions.checkArgument(t.getType() == TransistionType.USER);
 		this.statechangedEvent.fire(new StatedChangedEvent(t.getToState()));

@@ -1,29 +1,25 @@
-package de.esempe.workflow;
-
-import org.bson.types.ObjectId;
+package de.esempe.workflow.domain;
 
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Field;
-import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Index;
 import dev.morphia.annotations.Indexes;
 
 @Entity("users")
 @Indexes(@Index(fields = @Field("name")))
-public class User
+public class User extends MongoDbObject
 {
-	@Id
-	private final ObjectId id;
+
 	private String name;
 
 	public User()
 	{
-		this.id = new ObjectId();
+		super();
 	}
 
 	public User(final String name)
 	{
-		this();
+		super();
 		this.name = name;
 	}
 
