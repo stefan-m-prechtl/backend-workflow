@@ -8,7 +8,7 @@ import dev.morphia.annotations.Reference;
 @Entity("transitions")
 public class Transition extends MongoDbObject
 {
-	enum TransistionType
+	public enum TransistionType
 	{
 		USER, SYSTEM;
 	}
@@ -35,6 +35,12 @@ public class Transition extends MongoDbObject
 		this.fromState = fromState;
 		this.toState = toState;
 		this.type = TransistionType.USER;
+	}
+
+	public void setType(final TransistionType type)
+	{
+		this.type = type;
+
 	}
 
 	public void setRule(final Rule rule)

@@ -4,25 +4,25 @@
 package de.esempe.workflow;
 
 import java.util.List;
+import java.util.Set;
 
-import org.bson.Document;
+import org.bson.UuidRepresentation;
 import org.tinylog.Logger;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 
-import de.esempe.workflow.PureTransition.TransistionType;
 import de.esempe.workflow.domain.Rule;
 import de.esempe.workflow.domain.State;
 import de.esempe.workflow.domain.Transition;
+import de.esempe.workflow.domain.Transition.TransistionType;
+import de.esempe.workflow.domain.Workflow;
 import dev.morphia.Datastore;
 import dev.morphia.Morphia;
 import dev.morphia.config.MorphiaConfig;
 import dev.morphia.query.Query;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 public class App
 {
@@ -41,43 +41,47 @@ public class App
 	private void runDemoMorphia()
 	{
 		final String uri = "mongodb://127.0.0.1:27017";
-		final MongoClient mongoClient = MongoClients.create(uri);
+		final ConnectionString connectionString = new ConnectionString(uri);
+
+		final MongoClientSettings settings = MongoClientSettings.builder()//
+				.applyConnectionString(connectionString)//
+				.uuidRepresentation(UuidRepresentation.STANDARD)//
+				.build();
+
+		final MongoClient mongoClient = MongoClients.create(settings);
+
 		final MorphiaConfig config = MorphiaConfig.load();
 		final Datastore datastore = Morphia.createDatastore(mongoClient, config);
 
-		// final User user1 = new User("rebecca");
-		// final User save = datastore.save(user1);
+		final var save = Boolean.TRUE;
+		if (save)
+		{
 
-		final State stateStart = new State("Start");
-		final State stateEnd = new State("Ende");
-//		final JsonObjectBuilder builder = Json.createObjectBuilder();
-//		builder.add("name", "Eva");
-//		builder.add("age", 30);
-//		builder.add("city", "York");
-//
-//		// Build the JsonObject
-//		final JsonObject jsonObject = builder.build();
-//		state.setData(jsonObject);
-//
-		datastore.save(stateStart);
-		datastore.save(stateEnd);
+			final Workflow demoWf = this.defineWorkflow();
 
-		final Transition t = new Transition("Bearbeiten", stateStart, stateEnd);
+			final Set<Transition> transitions = demoWf.getTransitions();
+			for (final Transition t : transitions)
+			{
+				if (t.getDbId().isEmpty())
+				{
+					if (t.getFromState().getDbId().isEmpty())
+					{
+						datastore.save(t.getFromState());
+					}
+					if (t.getToState().getDbId().isEmpty())
+					{
+						datastore.save(t.getToState());
+					}
+					datastore.save(t);
+				}
+			}
 
-		final var script = """
-				import groovy.json.JsonSlurper
-				def jsonSlurper = new JsonSlurper()
-				def map = jsonSlurper.parseText(data)
-				map.dauer == 4;
-				""";
+			datastore.save(demoWf);
+		}
 
-		final Rule ruleMinDauer = new Rule("Minimale Dauer", script);
-		t.setRule(ruleMinDauer);
-		datastore.save(t);
-
-		final Query<Transition> query = datastore.find(Transition.class);
-		final List<Transition> items = query.iterator().toList();
-		for (final Transition item : items)
+		final Query<Workflow> query = datastore.find(Workflow.class);
+		final List<Workflow> items = query.iterator().toList();
+		for (final Workflow item : items)
 		{
 			System.out.println(item.toString());
 		}
@@ -85,55 +89,35 @@ public class App
 		Logger.info("done");
 	}
 
-	private void runDemoMongoDB()
+//	private void runDemoWorkflow() throws InterruptedException
+//	{
+//		final PureWorkflow wf = this.defineWorkflow();
+//		final Workflowinstance instance = new Workflowinstance(wf);
+//
+//		final JsonObject data = Json.createObjectBuilder() //
+//				.add("pc", "R9575") //
+//				.add("dauer", 60) //
+//				.add("begründung", "SW-Installation").build();
+//
+//		instance.start(data);
+//		Thread.sleep(5000);
+//
+//		final List<PureTransition> currentTransistions = instance.getCurrentTransistions();
+//		instance.fireTransition(currentTransistions.get(0));
+//
+//		Logger.info("done");
+//	}
+
+	private Workflow defineWorkflow()
 	{
-		final String uri = "mongodb://127.0.0.1:27017";
-		final MongoClient mongoClient = MongoClients.create(uri);
-		final MongoDatabase database = mongoClient.getDatabase("testdb");
+		final Workflow result = new Workflow("Demo");// CDI.CONTAINER.getType(PureWorkflow.class);
 
-		database.createCollection("workflows");
-		final MongoCollection<Document> collection = database.getCollection("workflows");
+		final State start = new State("Start");
+		final State genehmigt = new State("Genehmigt");
+		final State abgelehnt = new State("Abgelehnt");
+		final State pruefen = new State("prüfen");
 
-		// collection.insertOne(new Document().append("_id", new ObjectId()).append("title", "Workflow Admin-Rechte"));
-		// collection.insertOne(new Document().append("_id", new ObjectId()).append("title", "Workflow WWS-Rechte"));
-
-		final long countDocuments = collection.countDocuments();
-		System.out.println("Anzahl: " + countDocuments);
-
-		final Document firstDoc = collection.find().first();
-
-		Logger.info("done");
-	}
-
-	private void runDemoWorkflow() throws InterruptedException
-	{
-		final PureWorkflow wf = this.defineWorkflow();
-		final Workflowinstance instance = new Workflowinstance(wf);
-
-		final JsonObject data = Json.createObjectBuilder() //
-				.add("pc", "R9575") //
-				.add("dauer", 60) //
-				.add("begründung", "SW-Installation").build();
-
-		instance.start(data);
-		Thread.sleep(5000);
-
-		final List<PureTransition> currentTransistions = instance.getCurrentTransistions();
-		instance.fireTransition(currentTransistions.get(0));
-
-		Logger.info("done");
-	}
-
-	private PureWorkflow defineWorkflow()
-	{
-		final PureWorkflow result = CDI.CONTAINER.getType(PureWorkflow.class);
-
-		final PureState start = new PureState("Start");
-		final PureState genehmigt = new PureState("Genehmigt");
-		final PureState abgelehnt = new PureState("Abgelehnt");
-		final PureState pruefen = new PureState("prüfen");
-
-		final PureTransition automatischeGenehmigung = new PureTransition("Automatische Genehmigung", start, genehmigt);
+		final Transition automatischeGenehmigung = new Transition("Automatische Genehmigung", start, genehmigt);
 		automatischeGenehmigung.setType(TransistionType.SYSTEM);
 
 		var script = """
@@ -143,10 +127,10 @@ public class App
 				map.dauer == 4;
 				""";
 
-		// final PureRule ruleMinDauer = RuleCreator.build("Minimale Dauer", script);
-		// automatischeGenehmigung.setRule(ruleMinDauer);
+		final Rule ruleMinDauer = new Rule("Minimale Dauer", script);
+		automatischeGenehmigung.setRule(ruleMinDauer);
 
-		final PureTransition manuellePruefung = new PureTransition("Manuelle Prüfung", start, pruefen);
+		final Transition manuellePruefung = new Transition("Manuelle Prüfung", start, pruefen);
 		manuellePruefung.setType(TransistionType.SYSTEM);
 		script = """
 				import groovy.json.JsonSlurper
@@ -155,11 +139,11 @@ public class App
 				map.dauer == 60;
 				""";
 
-		// final PureRule ruleMaxDauer = RuleCreator.build("Maximale Dauer", script);
-		// manuellePruefung.setRule(ruleMaxDauer);
+		final Rule ruleMaxDauer = new Rule("Maximale Dauer", script);
+		manuellePruefung.setRule(ruleMaxDauer);
 
-		final PureTransition manuelleGenehmigung = new PureTransition("Manuelle Prüfung", pruefen, genehmigt);
-		final PureTransition manuelleAblehnung = new PureTransition("Manuelle Prüfung", pruefen, abgelehnt);
+		final Transition manuelleGenehmigung = new Transition("Manuelle Prüfung", pruefen, genehmigt);
+		final Transition manuelleAblehnung = new Transition("Manuelle Prüfung", pruefen, abgelehnt);
 
 		result.addTransition(automatischeGenehmigung);
 		result.addTransition(manuellePruefung);
